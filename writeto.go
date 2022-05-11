@@ -125,8 +125,13 @@ func (w *messageWriter) addFiles(files []*file, isAttachment bool) {
 			f.setHeader("Content-Type", mediaType+`; name="`+f.Name+`"`)
 		}
 
-		if _, ok := f.Header["Content-Transfer-Encoding"]; !ok {
-			f.setHeader("Content-Transfer-Encoding", string(Base64))
+		// default encoding
+		effectiveEncoding := Base64
+
+		if enc, ok := f.Header["Content-Transfer-Encoding"]; ok && len(enc) >= 1 {
+			effectiveEncoding = Encoding(enc[0])
+		} else {
+			f.setHeader("Content-Transfer-Encoding", string(effectiveEncoding))
 		}
 
 		if _, ok := f.Header["Content-Disposition"]; !ok {
@@ -145,7 +150,7 @@ func (w *messageWriter) addFiles(files []*file, isAttachment bool) {
 			}
 		}
 		w.writeHeaders(f.Header)
-		w.writeBody(f.CopyFunc, Base64)
+		w.writeBody(f.CopyFunc, effectiveEncoding)
 	}
 }
 
